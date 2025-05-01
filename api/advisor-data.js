@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
     }
 
     const html = await response.text();
-    const jsonMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
+    const jsonMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
 
     if (!jsonMatch || jsonMatch.length < 2) {
       return res.status(500).json({ error: 'Failed to extract SEC embedded JSON' });
