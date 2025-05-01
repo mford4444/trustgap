@@ -24,6 +24,8 @@ module.exports = async (req, res) => {
     }
 
     const html = await response.text();
+    console.error('SEC HTML snippet:', html.slice(0, 500)); // log first 500 chars
+
     const jsonMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
 
     if (!jsonMatch || jsonMatch.length < 2) {
