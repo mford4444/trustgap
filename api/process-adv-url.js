@@ -8,13 +8,26 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed. Use POST with { url } payload.' });
   }
 
-  const { url } = req.body;
-
-  if (!url || !url.startsWith('http')) {
-    return res.status(400).json({ error: 'Missing or invalid PDF URL' });
-  }
-
   try {
+    const body = await new Promise((resolve, reject) => {
+      let data = '';
+      req.on('data', chunk => data += chunk);
+      req.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (err) {
+          reject(new Error('Invalid JSON payload'));
+        }
+      });
+      req.on('error', reject);
+    });
+
+    const { url } = body;
+
+    if (!url || !url.startsWith('http')) {
+      return res.status(400).json({ error: 'Missing or invalid PDF URL' });
+    }
+
     const buffer = await new Promise((resolve, reject) => {
       https.get(url, (response) => {
         if (response.statusCode !== 200) {
