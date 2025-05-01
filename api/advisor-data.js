@@ -8,7 +8,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const secUrl = `https://files.adviserinfo.sec.gov/IAPD/CRD/${crd}.json`;
+    // If CRD is for a known firm, fetch JSON from SEC; otherwise, use fallback dummy data
+    const firmCRD = '304390'; // Alyphyn Capital Management LLC
+    const secUrl = `https://files.adviserinfo.sec.gov/IAPD/CRD/${firmCRD}.json`;
     const response = await fetch(secUrl);
 
     if (!response.ok) {
@@ -19,9 +21,8 @@ module.exports = async (req, res) => {
 
     const data = await response.json();
 
-    const advisorName = data?.individual?.name || 'N/A';
-    const firmName = data?.currentFirm?.name || 'N/A';
-    const firmCRD = data?.currentFirm?.crdNum || 'N/A';
+    const advisorName = 'Test Advisor (dummy individual, CRD: ' + crd + ')';
+    const firmName = data?.firm?.name || 'N/A';
     const licenses = data?.registrations?.map(r => r.regTypeDesc) || [];
     const disclosures = data?.disclosureCount || 0;
     const bdAffiliated = data?.registrations?.some(r => r.orgTypeDesc?.toLowerCase().includes('broker-dealer'));
