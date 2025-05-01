@@ -8,29 +8,41 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const secUrl = `https://adviserinfo.sec.gov/IAPD/IAPDIndividualSummary.aspx?INDIVIDUAL_CRD_NUM=${crd}`;
-    const response = await fetch(secUrl, {
+    const summaryUrl = `https://adviserinfo.sec.gov/individual/summary/${crd}`;
+    const response = await fetch(summaryUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/json',
+        'Accept': 'text/html',
         'Accept-Language': 'en-US,en;q=0.9'
       }
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('SEC fetch failed:', response.status, errorText);
-      return res.status(500).json({ error: 'Failed to fetch SEC data', status: response.status, body: errorText });
+      console.error('SEC summary fetch failed:', response.status, errorText);
+      return res.status(500).json({ error: 'Failed to fetch SEC summary HTML', status: response.status });
     }
 
-    const data = await response.json();
+    const html = await response.text();
+    const jsonMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
 
-    const advisorName = data?.Individual?.Name || 'N/A';
-    const firmName = data?.CurrentEmployers?.[0]?.FirmName || 'N/A';
-    const firmCRD = data?.CurrentEmployers?.[0]?.CRDNumber || 'N/A';
-    const licenses = data?.RegistrationHistory?.map(r => r.LicenseType) || [];
-    const disclosures = data?.Disclosures?.DisclosureCount || 0;
-    const bdAffiliated = data?.RegistrationHistory?.some(r => r.FirmType === 'Broker-Dealer');
+    if (!jsonMatch || jsonMatch.length < 2) {
+      return res.status(500).json({ error: 'Failed to extract SEC embedded JSON' });
+    }
+
+    const nextData = JSON.parse(jsonMatch[1]);
+    const data = nextData?.props?.pageProps?.dehydratedState?.queries?.[0]?.state?.data;
+
+    if (!data) {
+      return res.status(500).json({ error: 'SEC profile data missing from parsed JSON' });
+    }
+
+    const advisorName = data?.individual?.firstName + ' ' + data?.individual?.lastName || 'N/A';
+    const firmName = data?.employment?.firm?.name || 'N/A';
+    const firmCRD = data?.employment?.firm?.crdNumber || 'N/A';
+    const licenses = data?.registrations?.map(r => r.registrationType) || [];
+    const disclosures = data?.disclosures?.disclosureCount || 0;
+    const bdAffiliated = data?.registrations?.some(r => r.firmType === 'BD');
 
     const result = {
       advisorCRD: crd,
