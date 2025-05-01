@@ -1,5 +1,8 @@
 // /api/advisor-data.js
 
+import pdf from 'pdf-parse';
+import https from 'https';
+
 module.exports = async (req, res) => {
   const { crd } = req.query;
 
@@ -8,41 +11,29 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // If CRD is for a known firm, fetch JSON from SEC; otherwise, use fallback dummy data
-    const firmCRD = '304390'; // Alyphyn Capital Management LLC
-    const secUrl = `https://files.adviserinfo.sec.gov/IAPD/CRD/${firmCRD}.json`;
-    const response = await fetch(secUrl);
+    const pdfUrl = `https://files.adviserinfo.sec.gov/IAPD/Reports/ADV/${crd}/PDF/${crd}.pdf`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('SEC JSON fetch failed:', response.status, errorText);
-      return res.status(500).json({ error: 'Failed to fetch SEC CRD JSON', status: response.status });
-    }
+    const fetchPdfBuffer = (url) => new Promise((resolve, reject) => {
+      https.get(url, (response) => {
+        if (response.statusCode !== 200) {
+          return reject(new Error(`Failed to download PDF. Status code: ${response.statusCode}`));
+        }
+        const data = [];
+        response.on('data', chunk => data.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(data)));
+      }).on('error', reject);
+    });
 
-    const data = await response.json();
+    const buffer = await fetchPdfBuffer(pdfUrl);
+    const parsed = await pdf(buffer);
 
-    const advisorName = 'Test Advisor (dummy individual, CRD: ' + crd + ')';
-    const firmName = data?.firm?.name || 'N/A';
-    const licenses = data?.registrations?.map(r => r.regTypeDesc) || [];
-    const disclosures = data?.disclosureCount || 0;
-    const bdAffiliated = data?.registrations?.some(r => r.orgTypeDesc?.toLowerCase().includes('broker-dealer'));
-
-    const result = {
+    res.status(200).json({
       advisorCRD: crd,
-      advisorName,
-      firmCRD,
-      firmName,
-      advPart2Url: `https://adviserinfo.sec.gov/individual/${crd}`,
-      finra: {
-        disclosures,
-        licenses,
-        bdAffiliated,
-      },
-    };
-
-    res.status(200).json(result);
+      pdfTextPreview: parsed.text.slice(0, 1000),
+      totalPages: parsed.numpages
+    });
   } catch (err) {
-    console.error('Unexpected error:', err);
-    res.status(500).json({ error: 'Unexpected server error', message: err.message });
+    console.error('PDF fetch or parse error:', err);
+    res.status(500).json({ error: 'Failed to download or parse ADV PDF', message: err.message });
   }
 };
