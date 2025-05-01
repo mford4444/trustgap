@@ -1,5 +1,4 @@
 // /api/advisor-data.js
-import fetch from 'node-fetch';
 
 module.exports = async (req, res) => {
   const { crd } = req.query;
