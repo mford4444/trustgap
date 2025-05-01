@@ -18,7 +18,9 @@ module.exports = async (req, res) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch SEC data for CRD ${crd}`);
+      const errorText = await response.text();
+      console.error('SEC fetch failed:', response.status, errorText);
+      return res.status(500).json({ error: 'Failed to fetch SEC data', status: response.status, body: errorText });
     }
 
     const data = await response.json();
@@ -45,7 +47,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch advisor data' });
+    console.error('Unexpected error:', err);
+    res.status(500).json({ error: 'Unexpected server error', message: err.message });
   }
 };
