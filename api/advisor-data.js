@@ -8,43 +8,23 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const summaryUrl = `https://adviserinfo.sec.gov/individual/summary/${crd}`;
-    const response = await fetch(summaryUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'text/html',
-        'Accept-Language': 'en-US,en;q=0.9'
-      }
-    });
+    const secUrl = `https://files.adviserinfo.sec.gov/IAPD/CRD/${crd}.json`;
+    const response = await fetch(secUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('SEC summary fetch failed:', response.status, errorText);
-      return res.status(500).json({ error: 'Failed to fetch SEC summary HTML', status: response.status });
+      console.error('SEC JSON fetch failed:', response.status, errorText);
+      return res.status(500).json({ error: 'Failed to fetch SEC CRD JSON', status: response.status });
     }
 
-    const html = await response.text();
-    console.error('SEC HTML snippet:', html.slice(0, 500)); // log first 500 chars
+    const data = await response.json();
 
-    const jsonMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-
-    if (!jsonMatch || jsonMatch.length < 2) {
-      return res.status(500).json({ error: 'Failed to extract SEC embedded JSON' });
-    }
-
-    const nextData = JSON.parse(jsonMatch[1]);
-    const data = nextData?.props?.pageProps?.dehydratedState?.queries?.[0]?.state?.data;
-
-    if (!data) {
-      return res.status(500).json({ error: 'SEC profile data missing from parsed JSON' });
-    }
-
-    const advisorName = data?.individual?.firstName + ' ' + data?.individual?.lastName || 'N/A';
-    const firmName = data?.employment?.firm?.name || 'N/A';
-    const firmCRD = data?.employment?.firm?.crdNumber || 'N/A';
-    const licenses = data?.registrations?.map(r => r.registrationType) || [];
-    const disclosures = data?.disclosures?.disclosureCount || 0;
-    const bdAffiliated = data?.registrations?.some(r => r.firmType === 'BD');
+    const advisorName = data?.individual?.name || 'N/A';
+    const firmName = data?.currentFirm?.name || 'N/A';
+    const firmCRD = data?.currentFirm?.crdNum || 'N/A';
+    const licenses = data?.registrations?.map(r => r.regTypeDesc) || [];
+    const disclosures = data?.disclosureCount || 0;
+    const bdAffiliated = data?.registrations?.some(r => r.orgTypeDesc?.toLowerCase().includes('broker-dealer'));
 
     const result = {
       advisorCRD: crd,
