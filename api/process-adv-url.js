@@ -41,11 +41,29 @@ module.exports = async (req, res) => {
 
     const parsed = await pdf(buffer);
 
-    res.status(200).json({
+    // Extracting key sections from parsed text
+    const text = parsed.text.toLowerCase();
+    const feesRegex = /fees?|charges?/g;
+    const custodyRegex = /custody|conflict|related-party/g;
+    const servicesRegex = /clients? | service/;
+
+    const feesSection = text.match(feesRegex) || [];
+    const custodySection = text.match(custodyRegex) || [];
+    const servicesSection = text.match(servicesRegex) || [];
+
+    // Prepare the final output
+    const result = {
       sourceUrl: url,
       pdfTextPreview: parsed.text.slice(0, 1000),
-      totalPages: parsed.numpages
-    });
+      totalPages: parsed.numpages,
+      sections: {
+        fees: feesSection,
+        custody: custodySection,
+        services: servicesSection,
+      }
+    };
+
+    res.status(200).json(result);
   } catch (err) {
     console.error('PDF download or parse error:', err);
     res.status(500).json({ error: 'Failed to process ADV PDF from URL', message: err.message });
