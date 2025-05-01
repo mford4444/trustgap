@@ -4,7 +4,7 @@ import pdf from 'pdf-parse';
 import https from 'https';
 
 module.exports = async (req, res) => {
-  const testCRD = '110234'; // Known working CRD with ADV brochure
+  const testCRD = '143760'; // Known working CRD with ADV brochure
 
   try {
     const pdfUrl = `https://files.adviserinfo.sec.gov/IAPD/Reports/ADV/${testCRD}/PDF/${testCRD}.pdf`;
