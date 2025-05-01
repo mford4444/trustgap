@@ -4,14 +4,10 @@ import pdf from 'pdf-parse';
 import https from 'https';
 
 module.exports = async (req, res) => {
-  const { crd } = req.query;
-
-  if (!crd || typeof crd !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid CRD number' });
-  }
+  const testCRD = '110234'; // Known working CRD with ADV brochure
 
   try {
-    const pdfUrl = `https://files.adviserinfo.sec.gov/IAPD/Reports/ADV/${crd}/PDF/${crd}.pdf`;
+    const pdfUrl = `https://files.adviserinfo.sec.gov/IAPD/Reports/ADV/${testCRD}/PDF/${testCRD}.pdf`;
 
     const fetchPdfBuffer = (url) => new Promise((resolve, reject) => {
       https.get(url, (response) => {
@@ -28,7 +24,7 @@ module.exports = async (req, res) => {
     const parsed = await pdf(buffer);
 
     res.status(200).json({
-      advisorCRD: crd,
+      advisorCRD: testCRD,
       pdfTextPreview: parsed.text.slice(0, 1000),
       totalPages: parsed.numpages
     });
