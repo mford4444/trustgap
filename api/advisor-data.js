@@ -13,7 +13,10 @@ module.exports = async (req, res) => {
       httpsRequest.get(summaryUrl, (response) => {
         let data = '';
         response.on('data', chunk => (data += chunk));
-        response.on('end', () => resolve(data));
+        response.on('end', () => {
+          console.error('SEC summary HTML:', data.slice(0, 1000));
+          resolve(data);
+        });
       }).on('error', reject);
     });
 
