@@ -1,7 +1,7 @@
 {
   "name": "trust-gap-engine",
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "vercel dev"
   },
