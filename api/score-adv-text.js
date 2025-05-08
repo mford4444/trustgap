@@ -18,23 +18,25 @@ export default async function handler(req, res) {
 
   try {
     const prompt = `
-You are an expert compliance analyst. Based on the following SEC Form ADV text, evaluate the quality of fiduciary care provided by the advisory firm. Score each of the following on a scale from 1 (very poor) to 10 (excellent):
+You are an expert compliance analyst.
 
-1. Fee Transparency
-2. Conflicts of Interest Disclosure
-3. Custody Clarity
-4. Use of Third-Party Products
-5. Disciplinary History Disclosure
+Based on the following SEC Form ADV excerpt, analyze and return the following as a JSON object:
 
-Provide:
-- A score for each category
-- A brief explanation for each
-- An overall Fiduciary Gap Score (average of above)
-- A suggested letter grade (A, B, C)
+{
+  "scores": {
+    "feeTransparency": [score 1–10],
+    "conflictsDisclosure": [score 1–10],
+    "custodyClarity": [score 1–10],
+    "thirdPartyUse": [score 1–10],
+    "disciplinaryDisclosure": [score 1–10]
+  },
+  "fiduciaryGapScore": [average score],
+  "letterGrade": "A | B | C | D | F",
+  "summary": "1-2 sentence summary of strengths and weaknesses."
+}
 
-ADV Text (excerpt):
-
-""" 
+ADV Text:
+"""
 ${text.slice(0, 5000)}
 """
 `;
@@ -45,12 +47,19 @@ ${text.slice(0, 5000)}
       temperature: 0.2
     });
 
-    const responseText = completion.choices[0].message.content;
+const content = completion.choices[0].message.content;
 
-    res.status(200).json({
-      sourceUrl: url || null,
-      scoringOutput: responseText
-    });
+let parsed;
+try {
+  parsed = JSON.parse(content);
+} catch (err) {
+  return res.status(500).json({ error: 'Failed to parse GPT JSON output', raw: content });
+}
+
+res.status(200).json({
+  sourceUrl: url || null,
+  ...parsed
+});
   } catch (err) {
     console.error('GPT scoring error:', err);
     res.status(500).json({ error: 'OpenAI request failed', message: err.message });
