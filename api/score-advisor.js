@@ -76,6 +76,13 @@ BrokerCheck Profile:
       fiduciaryGapScore: advData.fiduciaryGapScore,
       ...brokerData,
     });
+    const clayProfile = {
+    linkedin: null, // Will be populated by Clay later
+    title: null,
+    isFounder: false,
+    speaksOnPodcasts: false,
+    enriched: false // helps track whether Clay has run
+};
 
     // === Final response ===
     res.status(200).json({
@@ -88,6 +95,7 @@ BrokerCheck Profile:
       summary: advData.summary,
       scores: advData.scores,
       ...brokerData,
+      clay: clayProfile // <--- placeholder for future enrichment
     });
   } catch (err) {
     console.error('Error in score-advisor:', err);
