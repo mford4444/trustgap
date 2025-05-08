@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "multiparty": "^4.2.2",
-     "airtable": "^0.11.8",
+     "airtable": "^0.13.1",
     "pdf-parse": "^1.1.1",
     "openai": "^4.0.0"
   }
