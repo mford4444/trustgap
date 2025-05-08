@@ -1,7 +1,7 @@
 // /api/process-intake.js
 
 import { OpenAI } from 'openai';
-import pdf from 'pdf-parse';
+const pdf = (await import('pdf-parse')).default;
 import Airtable from 'airtable';
 import https from 'https';
 import { assignAdvisorTier } from '../lib/assign-tier.js';
