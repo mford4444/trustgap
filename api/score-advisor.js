@@ -1,7 +1,7 @@
 // /api/score-advisor.js
 
 import { OpenAI } from 'openai';
-import { assignAdvisorTier } from '@/lib/assign-tier.js';
+import { assignAdvisorTier } from '../lib/assign-tier.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
