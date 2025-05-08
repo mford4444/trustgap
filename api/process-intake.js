@@ -1,10 +1,10 @@
 // /api/process-intake.js
 
 import { OpenAI } from 'openai';
-const pdf = (await import('pdf-parse')).default;
 import Airtable from 'airtable';
 import https from 'https';
 import { assignAdvisorTier } from '../lib/assign-tier.js';
+import { getDocument } from 'pdfjs-dist';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     const brokerText = fields['BrokerCheck Text'];
     const advFileUrl = fields['ADV Upload'][0].url;
 
+    // === Download PDF buffer ===
     const advBuffer = await new Promise((resolve, reject) => {
       https.get(advFileUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
         const chunks = [];
@@ -40,9 +41,20 @@ export default async function handler(req, res) {
       });
     });
 
-    const parsed = await pdf(advBuffer);
-    const advText = parsed.text.slice(0, 6000);
+    // === Parse PDF text using pdfjs-dist ===
+    const doc = await getDocument({ data: advBuffer }).promise;
+    let advText = '';
 
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map((item) => item.str);
+      advText += strings.join(' ') + '\n';
+    }
+
+    advText = advText.slice(0, 6000); // Trim to token limit
+
+    // === GPT: ADV scoring ===
     const advPrompt = `
 You are an expert compliance analyst.
 
@@ -73,6 +85,7 @@ ADV Text:
 
     const advData = JSON.parse(advResponse.choices[0].message.content);
 
+    // === GPT: BrokerCheck classification ===
     const brokerPrompt = `
 You are evaluating a financial advisor using public BrokerCheck data.
 
