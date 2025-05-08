@@ -133,8 +133,12 @@ BrokerCheck Profile:
       score: advData.fiduciaryGapScore,
       reason
     });
-  } catch (err) {
-    console.error('Processing error:', err);
-    res.status(500).json({ error: 'Failed to process intake', message: err.message });
-  }
+} catch (err) {
+  console.error('Processing error:', err); // Log full error to Vercel
+  res.status(500).json({
+    error: 'Failed to process intake',
+    message: err.message || 'Unknown error',
+    stack: err.stack
+  });
+}
 }
