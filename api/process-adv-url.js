@@ -1,9 +1,8 @@
 // /api/process-adv-url.js
-
 import pdf from 'pdf-parse';
 import https from 'https';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST with { url } payload.' });
   }
@@ -29,7 +28,9 @@ module.exports = async (req, res) => {
     }
 
     const buffer = await new Promise((resolve, reject) => {
-      https.get(url, (response) => {
+      https.get(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Node.js)' }
+      }, (response) => {
         if (response.statusCode !== 200) {
           return reject(new Error(`Failed to download PDF. Status code: ${response.statusCode}`));
         }
@@ -41,31 +42,13 @@ module.exports = async (req, res) => {
 
     const parsed = await pdf(buffer);
 
-    // Extracting key sections from parsed text
-    const text = parsed.text.toLowerCase();
-    const feesRegex = /fees?|charges?/g;
-    const custodyRegex = /custody|conflict|related-party/g;
-    const servicesRegex = /clients? | service/;
-
-    const feesSection = text.match(feesRegex) || [];
-    const custodySection = text.match(custodyRegex) || [];
-    const servicesSection = text.match(servicesRegex) || [];
-
-    // Prepare the final output
-    const result = {
+    res.status(200).json({
       sourceUrl: url,
       pdfTextPreview: parsed.text.slice(0, 1000),
-      totalPages: parsed.numpages,
-      sections: {
-        fees: feesSection,
-        custody: custodySection,
-        services: servicesSection,
-      }
-    };
-
-    res.status(200).json(result);
+      totalPages: parsed.numpages || null
+    });
   } catch (err) {
     console.error('PDF download or parse error:', err);
     res.status(500).json({ error: 'Failed to process ADV PDF from URL', message: err.message });
   }
-};
+}
