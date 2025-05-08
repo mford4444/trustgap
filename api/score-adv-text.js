@@ -1,12 +1,13 @@
 // /api/score-adv-text.js
-
 import { OpenAI } from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    return res.status(405).json({ error: 'Use POST' });
   }
 
   const { text, url } = req.body;
@@ -41,17 +42,17 @@ ${text.slice(0, 5000)}
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
+      temperature: 0.2
     });
 
     const responseText = completion.choices[0].message.content;
 
     res.status(200).json({
       sourceUrl: url || null,
-      scoringOutput: responseText,
+      scoringOutput: responseText
     });
   } catch (err) {
-    console.error('Scoring error:', err);
-    res.status(500).json({ error: 'Failed to score ADV text', message: err.message });
+    console.error('GPT scoring error:', err);
+    res.status(500).json({ error: 'OpenAI request failed', message: err.message });
   }
-};
+}
