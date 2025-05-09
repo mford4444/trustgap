@@ -15,30 +15,16 @@ export default async function handler(req, res) {
 
     const url = `https://brokercheck.finra.org/individual/summary/${crdNumber}`;
 
-    const json = await new Promise((resolve, reject) => {
-      const options = {
-        headers: {
-          'accept': 'application/json',
-          'user-agent': 'Mozilla/5.0',
-          'referer': `https://brokercheck.finra.org/`,
-        },
-      };
-
-      https.get(url, options, (resp) => {
+    const html = await new Promise((resolve, reject) => {
+      https.get(url, (resp) => {
         let data = '';
         resp.on('data', (chunk) => (data += chunk));
-        resp.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            resolve(parsed);
-          } catch (e) {
-            reject(new Error('Failed to parse JSON from BrokerCheck'));
-          }
-        });
+        resp.on('end', () => resolve(data));
       }).on('error', reject);
     });
 
-    const summary = json.individual?.bio || 'No summary available';
+    const summaryMatch = html.match(/"description":"([^"]+)"/);
+    const summary = summaryMatch ? decodeURIComponent(summaryMatch[1]) : 'No summary found.';
 
     res.status(200).json({
       crdNumber,
