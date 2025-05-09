@@ -18,7 +18,9 @@ export default async function handler(req, res) {
         maxRecords: 1
       })
       .firstPage();
-
+// Error Logging
+console.log('Fetched test record:', test[0]?.id);
+// End Logging
     if (records.length === 0) {
       return res.status(200).json({ message: 'No pending submissions found.' });
     }
