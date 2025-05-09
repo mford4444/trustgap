@@ -30,6 +30,9 @@ export default async function handler(req, res) {
         resp.on('error', reject);
       }).on('error', reject);
     });
+    
+    // Log HTML preview for debugging
+    console.log('HTML preview:', html.slice(0, 1000));
 
     // Try to extract JSON blob from embedded script
     const jsonMatch = html.match(/window\.__REACT_QUERY_INITIAL_QUERIES__\s*=\s*(\[.*?\]);/s);
