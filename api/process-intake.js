@@ -124,7 +124,7 @@ BrokerCheck Profile:
     await base('Intake Submissions').update(id, {
       'Tier': tier,
       'Fiduciary Gap Score': advData.fiduciaryGapScore,
-      'Grade (A–F)': advData.letterGrade,
+      'Grade (A-F)': advData.letterGrade,
       'Summary': advData.summary,
       'Status': 'Scored',
       'Raw Response': JSON.stringify({ advData, brokerData, reason })
