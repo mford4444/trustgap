@@ -4,8 +4,8 @@ import { OpenAI } from 'openai';
 import Airtable from 'airtable';
 import https from 'https';
 import { assignAdvisorTier } from '../lib/assign-tier.js';
-import pdfjsLib, { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.js';
-const { getDocument } = pdfjsLib;
+import pdfjs from 'pdfjs-dist/legacy/build/pdf.js';
+const { getDocument, GlobalWorkerOptions } = pdfjs;
 GlobalWorkerOptions.workerSrc = false;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
