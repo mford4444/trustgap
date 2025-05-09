@@ -16,19 +16,43 @@ export default async function handler(req, res) {
     const url = `https://brokercheck.finra.org/individual/summary/${crdNumber}`;
 
     const html = await new Promise((resolve, reject) => {
-      https.get(url, (resp) => {
+      const options = {
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+          'accept': 'text/html',
+        },
+      };
+
+      https.get(url, options, (resp) => {
         let data = '';
         resp.on('data', (chunk) => (data += chunk));
         resp.on('end', () => resolve(data));
+        resp.on('error', reject);
       }).on('error', reject);
     });
 
-    const summaryMatch = html.match(/"description":"([^"]+)"/);
-    const summary = summaryMatch ? decodeURIComponent(summaryMatch[1]) : 'No summary found.';
+    // Try to extract JSON blob from embedded script
+    const jsonMatch = html.match(/window\.__REACT_QUERY_INITIAL_QUERIES__\s*=\s*(\[.*?\]);/s);
+    if (!jsonMatch) {
+      throw new Error('Could not find embedded BrokerCheck data');
+    }
+
+    const embedded = JSON.parse(jsonMatch[1]);
+    const dataObj = embedded[0]?.state?.data;
+
+    const summary = dataObj?.bio || 'No summary available';
+    const disclosuresCount = dataObj?.disclosures?.length || 0;
+    const yearsOfExperience = dataObj?.yearsOfExperience || null;
+    const isPreviouslyRegistered = dataObj?.isPreviouslyRegistered || false;
+    const affiliations = dataObj?.registrations?.map(reg => reg.firm?.name).filter(Boolean) || [];
 
     res.status(200).json({
       crdNumber,
-      summary
+      summary,
+      disclosuresCount,
+      yearsOfExperience,
+      isPreviouslyRegistered,
+      affiliations
     });
   } catch (err) {
     console.error('Scrape error:', err);
