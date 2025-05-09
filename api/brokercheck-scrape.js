@@ -15,31 +15,30 @@ export default async function handler(req, res) {
 
     const url = `https://brokercheck.finra.org/individual/summary/${crdNumber}`;
 
-    const html = await new Promise((resolve, reject) => {
+    const json = await new Promise((resolve, reject) => {
       const options = {
         headers: {
+          'accept': 'application/json',
           'user-agent': 'Mozilla/5.0',
-          'accept': 'text/html',
+          'referer': `https://brokercheck.finra.org/`,
         },
       };
 
       https.get(url, options, (resp) => {
         let data = '';
         resp.on('data', (chunk) => (data += chunk));
-        resp.on('end', () => resolve(data));
-        resp.on('error', reject);
+        resp.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            resolve(parsed);
+          } catch (e) {
+            reject(new Error('Failed to parse JSON from BrokerCheck'));
+          }
+        });
       }).on('error', reject);
     });
 
-    // Try to extract JSON blob from embedded script
-    const jsonMatch = html.match(/window\.__REACT_QUERY_INITIAL_QUERIES__\s*=\s*(\[.*?\]);/s);
-    if (!jsonMatch) {
-      throw new Error('Could not find embedded BrokerCheck data');
-    }
-
-    const embedded = JSON.parse(jsonMatch[1]);
-    const dataObj = embedded[0]?.state?.data;
-    const summary = dataObj?.bio || 'No summary available';
+    const summary = json.individual?.bio || 'No summary available';
 
     res.status(200).json({
       crdNumber,
