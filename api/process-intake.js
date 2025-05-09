@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   try {
     const records = await base('Intake Submissions')
       .select({
-        filterByFormula: "AND(Status = 'Pending', LEN({ADV Upload}) > 0)",
+        filterByFormula: "AND(Status = 'Pending', LEN({ADV P2 Upload}) > 0)",
         maxRecords: 1
       })
       .firstPage();
@@ -29,10 +29,10 @@ console.log('Fetched test record:', test[0]?.id);
     const id = record.id;
     const fields = record.fields;
 
-    const advisorName = fields['Advisor Name'];
+    const advisorName = fields['Name'];
     const crdNumber = fields['CRD Number'];
     const brokerText = fields['BrokerCheck Text'];
-    const advFileUrl = fields['ADV Upload'][0].url;
+    const advFileUrl = fields['ADV P2 Upload'][0].url;
 
     // === Download PDF buffer ===
     const advBuffer = await new Promise((resolve, reject) => {
