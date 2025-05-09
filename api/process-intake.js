@@ -5,8 +5,10 @@ import Airtable from 'airtable';
 import https from 'https';
 import { assignAdvisorTier } from '../lib/assign-tier.js';
 import pdfjs from 'pdfjs-dist/legacy/build/pdf.js';
+import pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.js';
+
 const { getDocument, GlobalWorkerOptions } = pdfjs;
-GlobalWorkerOptions.workerSrc = false;
+GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
