@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     });
 
     // === Parse PDF text using pdfjs-dist ===
-    const doc = await getDocument({ data: advBuffer }).promise;
+const doc = await getDocument({ data: new Uint8Array(advBuffer) }).promise;
     let advText = '';
 
     for (let i = 1; i <= doc.numPages; i++) {
